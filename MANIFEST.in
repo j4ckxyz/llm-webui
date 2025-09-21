@@ -1,0 +1,10 @@
+# LLM WebUI
+
+include README.md
+include LICENSE
+recursive-include llm_webui/static *
+recursive-include llm_webui/templates *
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *~
+global-exclude .DS_Store

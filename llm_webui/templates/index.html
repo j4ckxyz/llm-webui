@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM WebUI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-robot me-2"></i>LLM WebUI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-tab="prompt">
+                            <i class="fas fa-comment me-1"></i>Prompt
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="chat">
+                            <i class="fas fa-comments me-1"></i>Chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="models">
+                            <i class="fas fa-brain me-1"></i>Models
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="templates">
+                            <i class="fas fa-file-alt me-1"></i>Templates
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="logs">
+                            <i class="fas fa-history me-1"></i>Logs
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button class="btn btn-outline-light btn-sm" id="open-help">
+                        <i class="fas fa-circle-question me-1"></i>CLI Help
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Prompt Tab -->
+        <div id="prompt-tab" class="tab-content active">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-comment me-2"></i>Execute Prompt</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="prompt-form">
+                                <div class="mb-3">
+                                    <label for="prompt-text" class="form-label">Prompt</label>
+                                    <textarea class="form-control" id="prompt-text" name="prompt" rows="4" placeholder="Enter your prompt here..." required></textarea>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="prompt-model" class="form-label">Model</label>
+                                        <select class="form-select" id="prompt-model" name="model">
+                                            <option value="">Default model</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="prompt-template" class="form-label">Template</label>
+                                        <select class="form-select" id="prompt-template" name="template">
+                                            <option value="">No template</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="system-prompt" class="form-label">System Prompt (optional)</label>
+                                    <textarea class="form-control" id="system-prompt" name="system" rows="2" placeholder="Optional system prompt..."></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="prompt-tools" class="form-label">Tools</label>
+                                    <select class="form-select" id="prompt-tools" name="tools" multiple>
+                                    </select>
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple tools</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Attachments</label>
+                                    <div id="file-drop-area" class="file-upload-area">
+                                        <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                        <div>Drag & drop files here, click to select, or paste an image</div>
+                                        <input class="form-control d-none" type="file" id="file-upload" multiple accept="image/*,text/*,.pdf,.doc,.docx">
+                                    </div>
+                                    <div id="uploaded-files" class="uploaded-files"></div>
+                                    <div class="form-text">Accepted: images, text, PDF, Word docs and more</div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="stream-response" checked>
+                                        <label class="form-check-label" for="stream-response">
+                                            Stream response
+                                        </label>
+                                    </div>
+                                    <div class="flex-grow-1 mx-2">
+                                        <input type="text" id="prompt-extra-flags" class="form-control form-control-sm" placeholder="Extra flags (e.g. --raw --no-cache)">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i>Execute
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-cog me-2"></i>Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="model-options" class="mb-3">
+                                <p class="text-muted">Select a model to see available options</p>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Advanced options</strong>
+                                <button type="button" id="add-option" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-plus"></i> Add option
+                                </button>
+                            </div>
+                            <div id="options-editor" class="mb-2"></div>
+                            <div class="form-text">Add arbitrary CLI options passed as <code>-o key value</code> (e.g. <code>reasoning_effort high</code>).</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-reply me-2"></i>Response</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="prompt-response" class="response-container">
+                                <p class="text-muted">Response will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat-tab" class="tab-content">
+            <div class="row h-100">
+                <div class="col-lg-3">
+                    <div class="card" style="height: 600px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Conversations</h6>
+                            <button class="btn btn-sm btn-outline-secondary" id="refresh-conversations" title="Refresh">
+                                <i class="fas fa-rotate"></i>
+                            </button>
+                        </div>
+                        <div class="card-body p-0" style="overflow-y:auto;">
+                            <div class="p-2">
+                                <input type="text" id="conversation-filter" class="form-control form-control-sm" placeholder="Filter...">
+                            </div>
+                            <ul id="conversation-list" class="list-group list-group-flush">
+                                <!-- Conversations populated here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card chat-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-comments me-2"></i>Chat</h5>
+                            <button class="btn btn-sm btn-outline-secondary" id="new-chat">
+                                <i class="fas fa-plus me-1"></i>New Chat
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="chat-messages" class="chat-messages">
+                                <div class="welcome-message text-center p-4">
+                                    <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Start a conversation with an AI model</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <form id="chat-form">
+                                <div class="input-group">
+                                    <textarea class="form-control" id="chat-input" placeholder="Type your message..." rows="1" required></textarea>
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-cog me-2"></i>Chat Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="chat-model" class="form-label">Model</label>
+                                <select class="form-select" id="chat-model">
+                                    <option value="">Default model</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chat-system" class="form-label">System Prompt</label>
+                                <textarea class="form-control" id="chat-system" rows="3" placeholder="Optional system prompt..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chat-tools" class="form-label">Tools</label>
+                                <select class="form-select" id="chat-tools" multiple>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chat-extra-flags" class="form-label">Extra flags</label>
+                                <input type="text" id="chat-extra-flags" class="form-control" placeholder="e.g. --raw --no-cache">
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Advanced options</strong>
+                                <button type="button" id="add-chat-option" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-plus"></i> Add option
+                                </button>
+                            </div>
+                            <div id="chat-options-editor"></div>
+                            <div class="form-text">Options passed as <code>-o key value</code> to <code>llm chat</code>.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Models Tab -->
+        <div id="models-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-brain me-2"></i>Available Models</h5>
+                </div>
+                <div class="card-body">
+                    <div id="models-loading" class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading models...</p>
+                    </div>
+                    <div id="models-list" class="d-none">
+                        <!-- Models will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Tab -->
+        <div id="templates-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-alt me-2"></i>Templates</h5>
+                </div>
+                <div class="card-body">
+                    <div id="templates-list">
+                        <!-- Templates will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logs-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-history me-2"></i>Recent Logs</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-logs">
+                        <i class="fas fa-refresh me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="logs-list">
+                        <!-- Logs will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', path='/js/app.js') }}"></script>
+
+        <!-- Help Modal -->
+        <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="helpModalLabel">LLM CLI Help</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">llm</span>
+                            <input type="text" id="help-path" class="form-control" placeholder="Subcommand path (e.g. 'prompt' or 'logs list')">
+                            <button class="btn btn-outline-primary" id="run-help"><i class="fas fa-play"></i></button>
+                        </div>
+                        <pre id="help-output" class="bg-light p-2 rounded" style="white-space: pre-wrap; max-height: 60vh;"></pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>
+</html>
