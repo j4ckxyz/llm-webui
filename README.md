@@ -201,6 +201,18 @@ cd llm-webui
 pip install -e ".[dev]"
 ```
 
+### Screenshots
+
+You can generate screenshots of the UI via a headless browser:
+
+```bash
+pip install playwright
+python -m playwright install chromium
+python scripts/screenshot.py --start-server --port 8765 --out docs/screenshots
+```
+
+Generated files will appear under `docs/screenshots/` (e.g., `01_prompt.png`, `02_chat.png`). You can also run against an already running server by omitting `--start-server` and specifying the correct host/port flags.
+
 ### Running in Development Mode
 
 ```bash

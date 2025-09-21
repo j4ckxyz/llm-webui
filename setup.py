@@ -27,6 +27,7 @@ setup(
             "pytest",
             "black",
             "flake8",
+            "playwright",
         ]
     },
     entry_points={
